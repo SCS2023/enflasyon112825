@@ -9,7 +9,7 @@ import json
 import time
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="EnflasyonAI", layout="wide", page_icon="🤖")
+st.set_page_config(page_title="Gıda EnflasyonAI", layout="wide", page_icon="🍎")
 
 # --- 🎨 PREMIUM TASARIM (CSS) ---
 st.markdown("""
@@ -23,15 +23,15 @@ st.markdown("""
         color: #1f2937;
     }
 
-    /* HERO SECTION (Üst Başlık) */
+    /* HERO SECTION (Üst Başlık) - Gıda Temasına Uygun Renkler */
     .hero {
-        background: linear-gradient(120deg, #2563eb, #1e40af);
+        background: linear-gradient(120deg, #10b981, #059669); /* Yeşil/Nane Tonları */
         padding: 40px 20px;
         border-radius: 20px;
         color: white;
         text-align: center;
         margin-bottom: 30px;
-        box-shadow: 0 10px 25px -10px rgba(37, 99, 235, 0.5);
+        box-shadow: 0 10px 25px -10px rgba(16, 185, 129, 0.5);
     }
     .hero h1 {
         font-size: 3.5rem;
@@ -60,7 +60,7 @@ st.markdown("""
     div[data-testid="metric-container"]:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        border-color: #3b82f6;
+        border-color: #10b981; /* Yeşil vurgu */
     }
     div[data-testid="metric-container"] label {
         font-weight: 600;
@@ -73,14 +73,14 @@ st.markdown("""
     }
 
     /* BUTON STİLİ (PULSE ANİMASYONLU) */
-    @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-        70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    @keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
     .stButton > button {
-        background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
         color: white;
         border: none;
         padding: 20px 40px;
@@ -91,13 +91,13 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
         transition: all 0.3s ease;
-        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-        animation: pulse 2s infinite;
+        box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3);
+        animation: pulse-green 2s infinite;
     }
     .stButton > button:hover {
         transform: scale(1.02);
-        background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
-        box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4);
+        background: linear-gradient(90deg, #059669 0%, #047857 100%);
+        box-shadow: 0 20px 25px -5px rgba(5, 150, 105, 0.4);
         animation: none; /* Üzerine gelince animasyon dursun */
     }
     
@@ -121,20 +121,15 @@ st.markdown("""
 # --- MODERN HEADER (HTML) ---
 st.markdown("""
 <div class="hero">
-    <h1>🤖 EnflasyonAI</h1>
-    <p>Yapay Zeka Destekli Gerçek Zamanlı Piyasa Analisti</p>
+    <h1>🍎 Gıda EnflasyonAI</h1>
+    <p>Sadece temel gıda ürünlerinin anlık fiyat analizini sunar.</p>
 </div>
 """, unsafe_allow_html=True)
 
-# --- REFERANS (GEÇEN AY) FİYATLARI (+%10 ARTIRILDI) ---
-# Bu fiyatlar, web çekme başarısız olduğunda baz alınacaktır.
-# U+00A0 karakterleri temizlendi
+# --- REFERANS (GEÇEN AY) FİYATLARI ---
+# Sadece Gıda kategorileri tutuldu.
 REF_PRICES = {
     "Sebze": 38.50, "Meyve": 49.50, "Et/Süt": 495.00, "Temel": 242.00,
-    "Kıyafet": 770.00, "Ayakkabı": 1980.00,
-    "Mobilya": 24200.00, "Beyaz Eşya": 15400.00,
-    "Yakıt": 46.20, "Toplu Taşıma": 16.50, "Araç": 1265000.00,
-    "İlaç": 44.00, "Okul": 352000.00, "Sigara": 99.00, "Fatura": 30.80
 }
 
 # --- YARDIMCI FONKSİYONLAR ---
@@ -167,21 +162,23 @@ def clean_price(price_str):
     except:
         return 0.0
 
-# --- VERİ ÇEKME MODÜLLERİ ---
-# NOT: Web çekme kısıtlamaları nedeniyle, bu fonksiyonlar başarısız olduğunda 
-# uygulamanın kırılmaması için simülasyon/referans fiyatları kullanılmıştır.
+# --- VERİ ÇEKME MODÜLÜ (SADECE GIDA) ---
 
 def fetch_gida():
     data = []
-    # Gıda için Onur Market'teki URL'ler, scraping engeline takıldığı için
-    # bu fonksiyonun başarısız olma olasılığı yüksektir.
+    # Gıda ürünleri ve Onur Market URL'leri
+    # NOT: Web çekme kısıtlamaları nedeniyle, bu sitelerden veri çekmek her zaman başarılı olmayabilir.
     gida_dict = {
         "Sebze": [("Domates", "https://www.onurmarket.com/domates-kg--8126"), ("Biber", "https://www.onurmarket.com/biber-carliston-kg--8101")],
+        "Meyve": [("Muz", "https://www.onurmarket.com/muz-yerli-kg--8164"), ("Elma", "https://www.onurmarket.com/elma-starking-kg--8135")],
         "Et/Süt": [("Antrikot", "https://www.onurmarket.com/-ksp.et-dana-antrikot-kg--121"), ("Piliç", "https://www.onurmarket.com/butun-pilic-kg")],
         "Temel": [("Ayçiçek Yağı", "https://www.onurmarket.com/-komili-aycicek-pet-4-lt--69469"), ("Çay", "https://www.onurmarket.com/-caykur-tiryaki-1000-gr--3947")]
     }
     
     for kat, items in gida_dict.items():
+        # Kategori için baz fiyatı al
+        base_price = REF_PRICES.get(kat, 1.0) 
+        
         for isim_ref, url in items:
             fiyat = 0; isim = isim_ref
             soup = get_soup(url)
@@ -204,117 +201,32 @@ def fetch_gida():
             # Web çekme başarısız olursa (fiyat 0 kalırsa), Referans fiyatı kullan ve bunu belirt.
             if fiyat == 0:
                 # Referans fiyatın %5 fazlasını "güncel fiyat" olarak simüle edelim
-                fiyat = REF_PRICES.get(kat, 1) * 1.05
+                fiyat = base_price * 1.05
                 isim = f"{isim_ref} (Simülasyon/Web Çekme Başarısız)"
             
-            data.append({"Grup": "Gıda", "Kategori": kat, "Ürün": isim, "Fiyat": fiyat, "Baz Fiyat": REF_PRICES.get(kat, 1)})
-    return pd.DataFrame(data)
-
-def fetch_giyim():
-    data = []
-    # Koton & Flo Örnekleri
-    urls = [
-        ("Kıyafet", "https://www.koton.com/pamuklu-slim-fit-uzun-kollu-italyan-yaka-gomlek-lacivert-4022961-2/"),
-        ("Ayakkabı", "https://www.flo.com.tr/urun/inci-acel-4fx-kahverengi-erkek-klasik-ayakkabi-101544485")
-    ]
-    for kat, url in urls:
-        soup = get_soup(url)
-        fiyat = 0; isim = "Moda Ürünü"
-        if soup:
-            try:
-                # Basit genel tarama
-                title = soup.find("h1")
-                if title: isim = title.get_text(strip=True)
-                # Flo ve Koton fiyat classları değişebiliyor, genel arama
-                price_divs = soup.find_all("div", class_=re.compile("price"))
-                for p in price_divs:
-                    txt = p.get_text()
-                    if "TL" in txt or "₺" in txt:
-                        extracted = clean_price(txt)
-                        if extracted > 10: # Mantıklı bir fiyatsa al
-                            fiyat = extracted
-                            break
-            except Exception as e:
-                print(f"Giyim scraping hatası: {e}")
-                fiyat = 0
-
-        # Web çekme başarısız olursa (fiyat 0 kalırsa), Referans fiyatı kullan ve bunu belirt.
-        if fiyat == 0:
-            fiyat = REF_PRICES.get(kat, 1) * 1.05
-            isim = f"{isim} (Simülasyon/Web Çekme Başarısız)"
-
-        data.append({"Grup": "Giyim", "Kategori": kat, "Ürün": isim, "Fiyat": fiyat, "Baz Fiyat": REF_PRICES.get(kat, 1)})
-    return pd.DataFrame(data)
-
-def fetch_genel_piyasa():
-    data = []
-    # Ulaşım & Yakıt
-    po_url = "https://www.petrolofisi.com.tr/akaryakit-fiyatlari"
-    soup = get_soup(po_url)
-    f_benzin = 0; f_motorin = 0
-    isim_benzin = "Benzin (L)"; isim_motorin = "Motorin (L)"
-
-    if soup:
-        try:
-            # Petrol Ofisi verisi, sayfanın yapısı değişirse burası çalışmayabilir.
-            # Şu an için basit bir deneme yapılıyor.
-            rows = soup.find_all("tr", class_="price-row")
-            if rows:
-                cols = rows[0].find_all("td")
-                # 1. sütun Benzin, 2. sütun Motorin (site yapısına göre)
-                f_benzin = clean_price(cols[1].find("span").get_text())
-                f_motorin = clean_price(cols[2].find("span").get_text())
-        except Exception as e:
-            print(f"Yakıt scraping hatası: {e}")
-            f_benzin = 0; f_motorin = 0
-
-    # Benzinde çekme başarısız olursa
-    if f_benzin == 0:
-        f_benzin = REF_PRICES["Yakıt"] * 1.05
-        isim_benzin = f"{isim_benzin} (Simülasyon/Web Çekme Başarısız)"
-    # Motorinde çekme başarısız olursa
-    if f_motorin == 0:
-        f_motorin = REF_PRICES["Yakıt"] * 1.06 # Motorin biraz daha farklı artmış gibi simüle edelim
-        isim_motorin = f"{isim_motorin} (Simülasyon/Web Çekme Başarısız)"
-    
-    data.append({"Grup": "Ulaşım", "Kategori": "Yakıt", "Ürün": isim_benzin, "Fiyat": f_benzin, "Baz Fiyat": REF_PRICES["Yakıt"]})
-    data.append({"Grup": "Ulaşım", "Kategori": "Yakıt", "Ürün": isim_motorin, "Fiyat": f_motorin, "Baz Fiyat": REF_PRICES["Yakıt"]})
-    
-    # Diğer Sabitler (Bu fiyatlar zaten sabittir, web çekme yoktur)
-    data.append({"Grup": "Ulaşım", "Kategori": "Araç", "Ürün": "Hyundai i20", "Fiyat": 1256000.00, "Baz Fiyat": REF_PRICES["Araç"]})
-    data.append({"Grup": "Sağlık", "Kategori": "İlaç", "Ürün": "Aspirin", "Fiyat": 50.00, "Baz Fiyat": REF_PRICES["İlaç"]})
-    
+            data.append({"Grup": "Gıda", "Kategori": kat, "Ürün": isim, "Fiyat": fiyat, "Baz Fiyat": base_price})
+            
     return pd.DataFrame(data)
 
 # --- ANA GÖVDE ---
 
 # Kullanıcıyı karşılayan info kutusu (Daha şık)
-st.info("ℹ️ Analizi başlatmak için aşağıdaki butona tıklayın. Sistem anlık olarak market ve borsa verilerini tarayacaktır.")
+st.info("ℹ️ Analizi başlatmak için aşağıdaki butona tıklayın. Sistem anlık olarak market gıda verilerini tarayacaktır.")
 
 col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
 with col_btn2:
-    start_btn = st.button("🚀 ANALİZİ BAŞLAT")
+    start_btn = st.button("🚀 GIDA ANALİZİNİ BAŞLAT")
 
 if start_btn:
     
     # İlerleme Çubuğu ve Spinner
-    progress_text = "Yapay zeka piyasayı tarıyor..."
+    progress_text = "Yapay zeka gıda piyasasını tarıyor..."
     my_bar = st.progress(0, text=progress_text)
     
-    # Adım 1: Gıda
-    df1 = fetch_gida()
-    my_bar.progress(40, text="Gıda fiyatları güncellendi...")
+    # Adım 1: Sadece Gıda Çekiliyor
+    df_final = fetch_gida()
+    my_bar.progress(100, text="Gıda Analizi Tamamlandı!")
     
-    # Adım 2: Giyim
-    df2 = fetch_giyim()
-    my_bar.progress(70, text="Tekstil verileri işleniyor...")
-    
-    # Adım 3: Genel
-    df3 = fetch_genel_piyasa()
-    my_bar.progress(100, text="Analiz tamamlandı!")
-    
-    # Birleştir
-    df_final = pd.concat([df1, df2, df3], ignore_index=True)
     # Web çekme başarısız olsa bile, artık referans fiyatlar kullanıldığı için 0'dan büyük olma garantisi var.
     df_final = df_final[df_final["Fiyat"] > 0] 
     
@@ -323,7 +235,12 @@ if start_btn:
     
     total_now = df_final["Fiyat"].sum()
     total_base = df_final["Baz Fiyat"].sum()
-    inflation = ((total_now - total_base) / total_base) * 100
+    
+    # Toplam sepet tutarına göre gıda enflasyonu hesaplama
+    if total_base > 0:
+        inflation = ((total_now - total_base) / total_base) * 100
+    else:
+        inflation = 0.0
     
     time.sleep(0.5)
     my_bar.empty()
@@ -332,20 +249,21 @@ if start_btn:
     
     # Metrikler
     c1, c2, c3 = st.columns(3)
-    c1.metric("🛒 Canlı Sepet Tutarı", f"{total_now:,.2f} ₺")
+    c1.metric("🛒 Canlı Gıda Sepeti Tutarı", f"{total_now:,.2f} ₺")
     c2.metric("📅 Baz Dönem (Geçen Ay)", f"{total_base:,.2f} ₺")
     
     # Enflasyon rengi (Yüksekse kırmızı)
     delta_color = "inverse" if inflation > 0 else "normal"
-    c3.metric("🔥 Kişisel Enflasyon", f"%{inflation:.2f}", delta=f"{inflation:.2f}% Değişim", delta_color=delta_color)
+    c3.metric("🔥 Gıda Enflasyonu", f"%{inflation:.2f}", delta=f"{inflation:.2f}% Değişim", delta_color=delta_color)
     
     st.markdown("---")
     
     # Tablo
-    st.subheader("📋 Detaylı Ürün Analizi")
+    st.subheader("📋 Detaylı Gıda Ürün Analizi")
     
     def color_change(val):
-        color = '#ef4444' if val > 0 else '#10b981'
+        # Yüksek pozitif enflasyon (kırmızı) / Düşük veya negatif enflasyon (yeşil)
+        color = '#ef4444' if val > 0 else '#10b981' 
         return f'color: {color}; font-weight: bold;'
 
     st.dataframe(
@@ -363,9 +281,9 @@ if start_btn:
     col_d1, col_d2, col_d3 = st.columns([1,2,1])
     with col_d2:
         st.download_button(
-            label="📥 Raporu İndir (Excel/CSV)",
+            label="📥 Gıda Raporunu İndir (Excel/CSV)",
             data=csv,
-            file_name="EnflasyonAI_Raporu.csv",
+            file_name="Gida_EnflasyonAI_Raporu.csv",
             mime="text/csv",
             key='download-btn'
         )
